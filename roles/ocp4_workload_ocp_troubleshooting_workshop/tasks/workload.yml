@@ -2,59 +2,10 @@
 - name: Prepare variables
   ansible.builtin.include_tasks: prepare_variables.yml
 
-- name: Create lab namespace for each user
-  kubernetes.core.k8s:
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Namespace
-      metadata:
-        name: "{{ item.key }}-lab"
+- name: Provision lab resources for each user
+  ansible.builtin.include_tasks: user_lab_resources.yml
   loop: "{{ _workload_user_data.users | dict2items }}"
   loop_control:
-    label: "{{ item.key }}-lab"
-  when: _workload_user_data.users is defined
-
-- name: Grant user admin access to their lab namespace
-  kubernetes.core.k8s:
-    state: present
-    definition:
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: RoleBinding
-      metadata:
-        name: user-admin
-        namespace: "{{ item.key }}-lab"
-      roleRef:
-        apiGroup: rbac.authorization.k8s.io
-        kind: ClusterRole
-        name: admin
-      subjects:
-        - kind: User
-          apiGroup: rbac.authorization.k8s.io
-          name: "{{ item.key }}"
-  loop: "{{ _workload_user_data.users | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}-lab"
-  when: _workload_user_data.users is defined
-
-- name: Grant showroom service account admin access to lab namespace
-  kubernetes.core.k8s:
-    state: present
-    definition:
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: RoleBinding
-      metadata:
-        name: showroom-admin
-        namespace: "{{ item.key }}-lab"
-      roleRef:
-        apiGroup: rbac.authorization.k8s.io
-        kind: ClusterRole
-        name: admin
-      subjects:
-        - kind: ServiceAccount
-          name: showroom
-          namespace: "showroom-{{ guid }}-{{ item.key }}"
-  loop: "{{ _workload_user_data.users | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}-lab"
+    loop_var: user
+    label: "{{ user.key }}-lab"
   when: _workload_user_data.users is defined
