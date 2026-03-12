@@ -1,20 +1,15 @@
 ---
-# -------------------------------------------------------------------------
-# To Do: Implement your workload deployment tasks here
-# -------------------------------------------------------------------------
-
-- name: Example workload, print examplevariable values
-  ansible.builtin.debug:
-    msg: "{{ item }}"
-  loop:
-  - "Variable 1: {{ ocp4_workload_example_variable_1 }}"
-  - "Variable 2: {{ ocp4_workload_example_variable_2 }}"
-
-- name: The following variables are always available
-  ansible.builtin.debug:
-    msg: "{{ item }}"
-  loop:
-  - "openshift_console_url:                 {{ openshift_console_url }}"
-  - "openshift_api_url:                     {{ openshift_api_url }}"
-  - "openshift_cluster_ingress_domain:      {{ openshift_cluster_ingress_domain }}"
-  - "users:                                 {{ users }}"
+- name: Create lab namespace for each user
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: >-
+          {{ ocp4_workload_authentication_htpasswd_user_base }}{{ item }}-lab
+  loop: >-
+    {{ range(1, ocp4_workload_authentication_htpasswd_user_count | int + 1) | list }}
+  loop_control:
+    label: >-
+      {{ ocp4_workload_authentication_htpasswd_user_base }}{{ item }}-lab

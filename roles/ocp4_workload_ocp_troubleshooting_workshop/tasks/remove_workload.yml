@@ -1,8 +1,15 @@
 ---
-# ------------------------------------------
-# Implement your workload removal tasks here
-# ------------------------------------------
-
-- name: Deprovision your workload
-  ansible.builtin.debug:
-    msg: "Deprovision is not implemented."
+- name: Remove lab namespace for each user
+  kubernetes.core.k8s:
+    state: absent
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: >-
+          {{ ocp4_workload_authentication_htpasswd_user_base }}{{ item }}-lab
+  loop: >-
+    {{ range(1, ocp4_workload_authentication_htpasswd_user_count | int + 1) | list }}
+  loop_control:
+    label: >-
+      {{ ocp4_workload_authentication_htpasswd_user_base }}{{ item }}-lab
