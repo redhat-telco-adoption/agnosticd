@@ -38,12 +38,12 @@
 - name: Build labs list from discovered directories
   ansible.builtin.set_fact:
     _ocp4_workload_ocp_troubleshooting_workshop_labs: >-
-      {% set labs = [] %}
-      {% for path in r_lab_dirs.files | map(attribute='path') | sort %}
-      {% set parts = path.split('/') %}
-      {% set _ = labs.append({'module': parts[-3], 'lab': parts[-2]}) %}
-      {% endfor %}
-      {{ labs }}
+      {{ r_lab_dirs.files
+         | map(attribute='path')
+         | sort
+         | map('regex_replace', '^.*/workloads/([^/]+)/([^/]+)/broken$', '{"module":"\1","lab":"\2"}')
+         | map('from_json')
+         | list }}
 
 # ── Step 5: Lab workload deployment ─────────────────────────────────────────
 
