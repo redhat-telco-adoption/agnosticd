@@ -9,12 +9,7 @@
 - name: Prepare variables
   ansible.builtin.include_tasks: prepare_variables.yml
 
-# ── Step 2: Provision lab 3.3 internal registry (once, shared) ──────────────
-
-- name: Provision internal registry image for lab 3.3
-  ansible.builtin.include_tasks: provision_lab33_registry.yml
-
-# ── Step 3: Per-user namespaces, RBAC, and quotas ───────────────────────────
+# ── Step 2: Per-user namespaces, RBAC, and quotas ───────────────────────────
 
 - name: Provision namespaces, RBAC, and quotas for each user
   ansible.builtin.include_tasks: user_lab_resources.yml
@@ -23,6 +18,11 @@
     loop_var: user
     label: "{{ user.key }}"
   when: _workload_user_data.users is defined
+
+# ── Step 3: Provision lab 3.3 internal registry (once, after namespaces) ────
+
+- name: Provision internal registry image for lab 3.3
+  ansible.builtin.include_tasks: provision_lab33_registry.yml
 
 # ── Step 4: Discover labs ────────────────────────────────────────────────────
 
