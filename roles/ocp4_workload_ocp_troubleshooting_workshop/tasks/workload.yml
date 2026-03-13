@@ -1,11 +1,67 @@
 ---
+# workload.yml — main provisioning logic
+
+- name: Run pre-workload prerequisites
+  ansible.builtin.include_tasks: pre_workload.yml
+
+# ── Step 1: Discover users via agnosticd_user_data ───────────────────────────
+
 - name: Prepare variables
   ansible.builtin.include_tasks: prepare_variables.yml
 
-- name: Provision lab resources for each user
+# ── Step 2: Provision lab 3.3 internal registry (once, shared) ──────────────
+
+- name: Provision internal registry image for lab 3.3
+  ansible.builtin.include_tasks: provision_lab33_registry.yml
+
+# ── Step 3: Per-user namespaces, RBAC, and quotas ───────────────────────────
+
+- name: Provision namespaces, RBAC, and quotas for each user
   ansible.builtin.include_tasks: user_lab_resources.yml
   loop: "{{ _workload_user_data.users | dict2items }}"
   loop_control:
     loop_var: user
-    label: "{{ user.key }}-lab"
+    label: "{{ user.key }}"
   when: _workload_user_data.users is defined
+
+# ── Step 4: Discover labs ────────────────────────────────────────────────────
+
+- name: Find lab broken/ directories
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files/workloads"
+    patterns: "broken"
+    file_type: directory
+    recurse: true
+  register: r_lab_dirs
+
+- name: Build labs list from discovered directories
+  ansible.builtin.set_fact:
+    _ocp4_workload_ocp_troubleshooting_workshop_labs: >-
+      {% set labs = [] %}
+      {% for path in r_lab_dirs.files | map(attribute='path') | sort %}
+      {% set parts = path.split('/') %}
+      {% set _ = labs.append({'module': parts[-3], 'lab': parts[-2]}) %}
+      {% endfor %}
+      {{ labs }}
+
+# ── Step 5: Lab workload deployment ─────────────────────────────────────────
+
+- name: Deploy lab workloads for all users
+  ansible.builtin.include_tasks: deploy_lab.yml
+  vars:
+    _lab: "{{ _item.0 }}"
+    _username: "{{ _item.1 }}"
+    _ns: "{{ _item.1 }}-{{ _item.0.module }}"
+  loop: >-
+    {{ _ocp4_workload_ocp_troubleshooting_workshop_labs
+       | product(_workload_user_data.users | list)
+       | list }}
+  loop_control:
+    loop_var: _item
+    label: "{{ _item.0.module }}/{{ _item.0.lab }} -> {{ _item.1 }}"
+  when: _workload_user_data.users is defined
+
+# ── Step 6: Post-workload reporting ─────────────────────────────────────────
+
+- name: Run post-workload reporting
+  ansible.builtin.include_tasks: post_workload.yml

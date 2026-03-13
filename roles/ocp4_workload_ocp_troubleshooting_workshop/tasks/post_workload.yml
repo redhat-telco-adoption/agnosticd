@@ -1,0 +1,56 @@
+---
+# post_workload.yml — report credentials and access information to AgnosticD
+
+- name: Get OpenShift console URL
+  kubernetes.core.k8s_info:
+    api_version: config.openshift.io/v1
+    kind: Console
+    name: cluster
+  register: r_console
+
+- name: Set console URL fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_ocp_troubleshooting_workshop_console_url: >-
+      {{ r_console.resources[0].status.consoleURL
+         | default('https://console-openshift-console.apps.' ~ openshift_cluster_ingress_domain) }}
+
+- name: Report per-user access information
+  agnosticd.core.agnosticd_user_info:
+    user: "{{ item.key }}"
+    msg: |
+      OpenShift Troubleshooting Workshop
+
+      Console URL     : {{ _ocp4_workload_ocp_troubleshooting_workshop_console_url }}
+      Username        : {{ item.key }}
+      Password        : {{ item.value.password | default('openshift') }}
+      ns-configuration: {{ item.key }}-01-configuration
+      ns-storage      : {{ item.key }}-02-storage
+      ns-security     : {{ item.key }}-03-security
+      ns-networking   : {{ item.key }}-04-networking
+      ns-resources    : {{ item.key }}-05-resources
+      ns-lifecycle    : {{ item.key }}-06-lifecycle
+    data:
+      console_url: "{{ _ocp4_workload_ocp_troubleshooting_workshop_console_url }}"
+      username: "{{ item.key }}"
+      password: "{{ item.value.password | default('openshift') }}"
+      ns_configuration: "{{ item.key }}-01-configuration"
+      ns_storage: "{{ item.key }}-02-storage"
+      ns_security: "{{ item.key }}-03-security"
+      ns_networking: "{{ item.key }}-04-networking"
+      ns_resources: "{{ item.key }}-05-resources"
+      ns_lifecycle: "{{ item.key }}-06-lifecycle"
+  loop: "{{ _workload_user_data.users | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  no_log: true
+
+- name: Report summary information
+  agnosticd.core.agnosticd_user_info:
+    msg: |
+      Workshop provisioned for {{ _workload_user_data.users | length }} user(s).
+      Console: {{ _ocp4_workload_ocp_troubleshooting_workshop_console_url }}
+      IDP    : {{ ocp4_workload_ocp_troubleshooting_workshop_idp_name | default('htpasswd') }}
+
+- name: Mark workload provisioning complete
+  ansible.builtin.set_fact:
+    workload_complete: true

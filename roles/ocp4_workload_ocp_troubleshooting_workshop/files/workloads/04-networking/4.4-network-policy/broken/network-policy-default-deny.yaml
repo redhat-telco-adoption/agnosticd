@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lab-4-4-default-deny
+  labels:
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  podSelector:
+    matchLabels:
+      lab: "4-4"    # scoped: only blocks pods with this label
+  policyTypes:
+  - Ingress

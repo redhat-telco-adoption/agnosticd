@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-2-1-app
+  labels:
+    app: lab-2-1-app
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab-2-1-app
+  template:
+    metadata:
+      labels:
+        app: lab-2-1-app
+    spec:
+      containers:
+      - name: web
+        image: registry.access.redhat.com/ubi9/nginx-124:latest
+        ports:
+        - containerPort: 8080
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          mkdir -p /usr/share/nginx/html /data
+          echo "$(date -Iseconds): App started" >> /data/timestamps.log
+          echo "<!DOCTYPE html><html><body><h1>Timestamp Logger</h1><pre>$(cat /data/timestamps.log)</pre></body></html>" > /usr/share/nginx/html/index.html
+          nginx -g "daemon off;"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /data
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: data-volume
+      # Note: The PVC "data-volume" is intentionally not created

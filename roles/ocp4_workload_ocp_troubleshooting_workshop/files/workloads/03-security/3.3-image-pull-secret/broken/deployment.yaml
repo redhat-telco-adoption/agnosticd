@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-3-3-app
+  labels:
+    app: lab-3-3-app
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab-3-3-app
+  template:
+    metadata:
+      labels:
+        app: lab-3-3-app
+    spec:
+      containers:
+      - name: web
+        # This image is in the internal registry — requires a pull secret.
+        # The secret workshop-registry-pull-secret exists in this namespace
+        # but is intentionally NOT referenced here. Students must:
+        #   1. Observe ErrImagePull with "unauthorized" error
+        #   2. Discover the pre-created pull secret
+        #   3. Add imagePullSecrets to this deployment
+        image: image-registry.openshift-image-registry.svc:5000/openshift-workshop-images/private-app:latest
+        ports:
+        - containerPort: 8080
+      # imagePullSecrets intentionally OMITTED

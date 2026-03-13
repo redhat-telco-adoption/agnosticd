@@ -1,0 +1,20 @@
+---
+# deploy_lab.yml
+# Called per (lab, user) combination with vars: _lab, _username, _ns
+
+- name: "Find broken YAML manifests for {{ _lab.module }}/{{ _lab.lab }}"
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files/workloads/{{ _lab.module }}/{{ _lab.lab }}/broken"
+    patterns: "*.yaml"
+    recurse: false
+  register: r_broken_files
+  delegate_to: localhost
+
+- name: "Apply {{ _lab.module }}/{{ _lab.lab }} broken manifests to {{ _ns }}"
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ _ns }}"
+    src: "{{ item.path }}"
+  loop: "{{ r_broken_files.files | sort(attribute='path') }}"
+  loop_control:
+    label: "{{ item.path | basename }}"

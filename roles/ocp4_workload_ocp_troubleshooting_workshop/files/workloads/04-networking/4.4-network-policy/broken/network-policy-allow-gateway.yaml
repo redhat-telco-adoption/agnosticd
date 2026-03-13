@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lab-4-4-allow-from-gateway
+  labels:
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  podSelector:
+    matchLabels:
+      role: backend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          role: api-gateway    # BUG: should be "frontend"
+    ports:
+    - port: 8080

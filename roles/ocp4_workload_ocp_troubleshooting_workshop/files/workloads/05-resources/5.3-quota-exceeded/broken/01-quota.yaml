@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: lab-5-3-tight-quota
+  labels:
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+    demo.redhat.com/created-by: openshift-demo-builder
+spec:
+  hard:
+    pods: "2"    # allows exactly 2 of the 3 requested replicas
+  scopeSelector:
+    matchExpressions:
+    - scopeName: PriorityClass
+      operator: In
+      values:
+      - lab-5-3-quota-demo

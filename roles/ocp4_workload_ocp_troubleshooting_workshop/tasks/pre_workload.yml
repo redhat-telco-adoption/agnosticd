@@ -1,0 +1,21 @@
+---
+# pre_workload.yml — prerequisite checks
+
+- name: Verify a default StorageClass exists
+  kubernetes.core.k8s_info:
+    api_version: storage.k8s.io/v1
+    kind: StorageClass
+  register: r_storageclasses
+  failed_when: >-
+    r_storageclasses.resources
+    | selectattr('metadata.annotations["storageclass.kubernetes.io/is-default-class"]', 'defined')
+    | selectattr('metadata.annotations["storageclass.kubernetes.io/is-default-class"]', 'equalto', 'true')
+    | list | length == 0
+
+- name: Verify gold-storage StorageClass does not exist
+  kubernetes.core.k8s_info:
+    api_version: storage.k8s.io/v1
+    kind: StorageClass
+    name: gold-storage
+  register: r_gold_sc
+  failed_when: r_gold_sc.resources | length > 0

@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: showroom-admin
+  namespace: {{ _username }}-{{ _module }}
+  labels:
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+    demo.redhat.com/created-by: openshift-demo-builder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+- kind: ServiceAccount
+  name: showroom
+  namespace: showroom-{{ guid }}-{{ _username }}

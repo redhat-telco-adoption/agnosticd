@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab-4-3-backend-svc
+  labels:
+    app: lab-4-3-backend
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  selector:
+    app: lab-4-3-backend
+  ports:
+  - port: 8080
+    targetPort: 8080

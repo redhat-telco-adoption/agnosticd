@@ -1,7 +1,17 @@
 ---
-# Any internal variables should be defined here.
-# Variable names must start with a single underscore (_) followed by the workload role name
-# Variable values should be empty to indicate that they will be set during the workload run.
-# Add comments for documentation if so required.
-_ocp4_workload_example_internal_variable_1: ""
-_ocp4_workload_example_internal_variable_2: ""
+# Internal runtime variables — not intended for external configuration.
+# Prefixed with _ per AgnosticD convention.
+
+_ocp4_workload_ocp_troubleshooting_workshop_modules:
+  - module: "01-configuration"
+    access: "edit"
+  - module: "02-storage"
+    access: "edit"
+  - module: "03-security"
+    access: "admin"
+  - module: "04-networking"
+    access: "edit"
+  - module: "05-resources"
+    access: "edit"
+  - module: "06-lifecycle"
+    access: "edit"

@@ -1,0 +1,11 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: lab-5-3-quota-demo
+  labels:
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+    demo.redhat.com/created-by: openshift-demo-builder
+value: 0
+globalDefault: false
+preemptionPolicy: Never
+description: "Used by lab 5.3 to scope ResourceQuota to quota-demo pods only."

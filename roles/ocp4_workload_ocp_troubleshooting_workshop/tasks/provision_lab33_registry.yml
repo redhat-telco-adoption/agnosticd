@@ -1,0 +1,149 @@
+---
+# provision_lab33_registry.yml
+# Called once before the per-user loop.
+# Sets up an internal-registry image for lab 3.3 so students see
+# "unauthorized" (401) instead of "manifest unknown" (404).
+#
+# Strategy:
+#   1. Create openshift-workshop-images namespace
+#   2. Import ubi9/nginx-124:latest as private-app:latest via ImageStream
+#   3. Create image-puller ServiceAccount + system:image-puller RoleBinding
+#   4. Create a long-lived SA token Secret and wait for it to populate
+#   5. Build a dockerconfig JSON for the internal registry
+#   6. Per-user: create workshop-registry-pull-secret in userN-03-security
+#      (intentionally created but NOT referenced in the Deployment — students
+#       must discover and add imagePullSecrets themselves)
+
+- name: Create openshift-workshop-images namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: openshift-workshop-images
+        labels:
+          workshop: openshift-troubleshooting
+          demo.redhat.com/name: ocp-troubleshooting-workshop
+          demo.redhat.com/created-by: openshift-demo-builder
+
+- name: Create image-puller ServiceAccount
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: image-puller
+        namespace: openshift-workshop-images
+        labels:
+          demo.redhat.com/name: ocp-troubleshooting-workshop
+
+- name: Grant image-puller SA the system:image-puller role
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: image-puller-binding
+        namespace: openshift-workshop-images
+        labels:
+          demo.redhat.com/name: ocp-troubleshooting-workshop
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:image-puller
+      subjects:
+      - kind: ServiceAccount
+        name: image-puller
+        namespace: openshift-workshop-images
+
+- name: Create long-lived token Secret for image-puller SA
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: image-puller-token
+        namespace: openshift-workshop-images
+        annotations:
+          kubernetes.io/service-account.name: image-puller
+        labels:
+          demo.redhat.com/name: ocp-troubleshooting-workshop
+      type: kubernetes.io/service-account-token
+
+- name: Import ubi9/nginx-124 as private-app ImageStream
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: image.openshift.io/v1
+      kind: ImageStream
+      metadata:
+        name: private-app
+        namespace: openshift-workshop-images
+        labels:
+          demo.redhat.com/name: ocp-troubleshooting-workshop
+      spec:
+        tags:
+        - name: latest
+          from:
+            kind: DockerImage
+            name: registry.access.redhat.com/ubi9/nginx-124:latest
+          importPolicy:
+            scheduled: false
+          referencePolicy:
+            type: Local
+
+- name: Wait for image-puller-token to be populated
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: image-puller-token
+    namespace: openshift-workshop-images
+  register: r_token_secret
+  retries: 20
+  delay: 3
+  until: >-
+    r_token_secret.resources | length > 0
+    and r_token_secret.resources[0].data is defined
+    and r_token_secret.resources[0].data.token is defined
+
+- name: Set image-puller token fact
+  ansible.builtin.set_fact:
+    _lab33_registry_token: >-
+      {{ r_token_secret.resources[0].data.token | b64decode }}
+
+- name: Build internal registry dockerconfig JSON
+  ansible.builtin.set_fact:
+    _lab33_dockerconfig: >-
+      {{
+        {
+          "auths": {
+            "image-registry.openshift-image-registry.svc:5000": {
+              "auth": ("serviceaccount:" ~ _lab33_registry_token) | b64encode
+            }
+          }
+        } | to_json
+      }}
+
+- name: Create workshop-registry-pull-secret in each user 03-security namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: workshop-registry-pull-secret
+        namespace: "{{ item.key }}-03-security"
+        labels:
+          demo.redhat.com/name: ocp-troubleshooting-workshop
+          demo.redhat.com/created-by: openshift-demo-builder
+      type: kubernetes.io/dockerconfigjson
+      data:
+        .dockerconfigjson: "{{ _lab33_dockerconfig | b64encode }}"
+  loop: "{{ _workload_user_data.users | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}-03-security"
+  no_log: true

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-5-1-app
+  labels:
+    app: lab-5-1-app
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab-5-1-app
+  template:
+    metadata:
+      labels:
+        app: lab-5-1-app
+    spec:
+      containers:
+      - name: web
+        image: registry.access.redhat.com/ubi9/nginx-124:latest
+        ports:
+        - containerPort: 8080
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          mkdir -p /usr/share/nginx/html
+          echo '<html><body><h1>Scheduler Test App</h1></body></html>' > /usr/share/nginx/html/index.html
+          nginx -g "daemon off;"
+        resources:
+          requests:
+            cpu: "32"
+            memory: "128Gi"
+          limits:
+            cpu: "64"
+            memory: "256Gi"

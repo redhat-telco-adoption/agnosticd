@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-5-3-app
+  labels:
+    app: lab-5-3-app
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  replicas: 3    # TOO MANY: quota only allows 2 pods
+  selector:
+    matchLabels:
+      app: lab-5-3-app
+  template:
+    metadata:
+      labels:
+        app: lab-5-3-app
+    spec:
+      priorityClassName: lab-5-3-quota-demo
+      containers:
+      - name: web
+        image: registry.access.redhat.com/ubi9/nginx-124:latest
+        ports:
+        - containerPort: 8080
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          mkdir -p /usr/share/nginx/html
+          echo '<html><body><h1>Quota Test App</h1><p>Running successfully within quota.</p></body></html>' > /usr/share/nginx/html/index.html
+          nginx -g "daemon off;"
+        resources:
+          requests:
+            memory: "256Mi"   # 3 x 256Mi = 768Mi > quota of 512Mi
+          limits:
+            memory: "256Mi"

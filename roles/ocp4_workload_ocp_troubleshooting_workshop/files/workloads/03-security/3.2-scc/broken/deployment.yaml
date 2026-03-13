@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-3-2-app
+  labels:
+    app: lab-3-2-app
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab-3-2-app
+  template:
+    metadata:
+      labels:
+        app: lab-3-2-app
+    spec:
+      containers:
+      - name: web
+        image: registry.access.redhat.com/ubi9/nginx-124:latest
+        ports:
+        - containerPort: 8080
+        securityContext:
+          runAsUser: 0    # Requesting root - rejected by restricted SCC

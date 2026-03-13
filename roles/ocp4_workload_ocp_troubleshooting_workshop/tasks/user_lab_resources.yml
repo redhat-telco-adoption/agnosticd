@@ -1,45 +1,56 @@
 ---
-- name: Create lab namespace
-  kubernetes.core.k8s:
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Namespace
-      metadata:
-        name: "{{ user.key }}-lab"
+# user_lab_resources.yml
+# Called per-user with loop_var: user (user.key = username, user.value = user data)
+# Creates one namespace per module with RBAC, quota, limitrange, and showroom SA access.
 
-- name: Grant user admin access to lab namespace
+- name: "Create {{ user.key }}-{{ item.module }} namespace"
   kubernetes.core.k8s:
     state: present
-    definition:
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: RoleBinding
-      metadata:
-        name: user-admin
-        namespace: "{{ user.key }}-lab"
-      roleRef:
-        apiGroup: rbac.authorization.k8s.io
-        kind: ClusterRole
-        name: admin
-      subjects:
-        - kind: User
-          apiGroup: rbac.authorization.k8s.io
-          name: "{{ user.key }}"
+    template: namespace-module.yaml.j2
+  vars:
+    _username: "{{ user.key }}"
+    _module: "{{ item.module }}"
+  loop: "{{ _ocp4_workload_ocp_troubleshooting_workshop_modules }}"
+  loop_control:
+    label: "{{ user.key }}-{{ item.module }}"
 
-- name: Grant showroom service account admin access to lab namespace
+- name: "Grant {{ item.access }} access in {{ user.key }}-{{ item.module }}"
   kubernetes.core.k8s:
     state: present
-    definition:
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: RoleBinding
-      metadata:
-        name: showroom-admin
-        namespace: "{{ user.key }}-lab"
-      roleRef:
-        apiGroup: rbac.authorization.k8s.io
-        kind: ClusterRole
-        name: admin
-      subjects:
-        - kind: ServiceAccount
-          name: showroom
-          namespace: "showroom-{{ guid }}-{{ user.key }}"
+    template: rolebinding-module.yaml.j2
+  vars:
+    _username: "{{ user.key }}"
+    _module: "{{ item.module }}"
+    _access: "{{ item.access }}"
+  loop: "{{ _ocp4_workload_ocp_troubleshooting_workshop_modules }}"
+  loop_control:
+    label: "{{ user.key }}-{{ item.module }}"
+
+- name: "Grant showroom SA admin access to {{ user.key }}-{{ item.module }}"
+  kubernetes.core.k8s:
+    state: present
+    template: rolebinding-showroom.yaml.j2
+  vars:
+    _username: "{{ user.key }}"
+    _module: "{{ item.module }}"
+  loop: "{{ _ocp4_workload_ocp_troubleshooting_workshop_modules }}"
+  loop_control:
+    label: "{{ user.key }}-{{ item.module }}"
+
+- name: "Apply safety quota to {{ user.key }}-{{ item.module }}"
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ user.key }}-{{ item.module }}"
+    src: "{{ role_path }}/files/quotas/safety-quota.yaml"
+  loop: "{{ _ocp4_workload_ocp_troubleshooting_workshop_modules }}"
+  loop_control:
+    label: "{{ user.key }}-{{ item.module }}"
+
+- name: "Apply default LimitRange to {{ user.key }}-{{ item.module }}"
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ user.key }}-{{ item.module }}"
+    src: "{{ role_path }}/files/quotas/safety-limitrange.yaml"
+  loop: "{{ _ocp4_workload_ocp_troubleshooting_workshop_modules }}"
+  loop_control:
+    label: "{{ user.key }}-{{ item.module }}"

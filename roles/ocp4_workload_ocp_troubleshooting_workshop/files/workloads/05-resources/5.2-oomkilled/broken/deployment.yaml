@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-5-2-app
+  labels:
+    app: lab-5-2-app
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab-5-2-app
+  template:
+    metadata:
+      labels:
+        app: lab-5-2-app
+    spec:
+      containers:
+      - name: web
+        image: registry.access.redhat.com/ubi9/nginx-124:latest
+        ports:
+        - containerPort: 8080
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Allocating 100MB of memory..."
+          python3 -c "
+          import time
+          data = bytearray(100 * 1024 * 1024)  # 100MB
+          print('Memory allocated, starting web server...')
+          time.sleep(5)
+          " || echo "python3 failed, continuing"
+          mkdir -p /usr/share/nginx/html
+          cat > /usr/share/nginx/html/index.html <<EOF
+          <!DOCTYPE html><html><body>
+          <h1>Application Running</h1>
+          <p>Memory usage: ~100MB</p>
+          </body></html>
+          EOF
+          nginx -g "daemon off;"
+        resources:
+          requests:
+            memory: "32Mi"
+          limits:
+            memory: "32Mi"    # TOO LOW - app needs ~100MB

@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: workshop-{{ _access }}
+  namespace: {{ _username }}-{{ _module }}
+  labels:
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+    demo.redhat.com/created-by: openshift-demo-builder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ _access }}
+subjects:
+- kind: User
+  name: {{ _username }}
+  apiGroup: rbac.authorization.k8s.io

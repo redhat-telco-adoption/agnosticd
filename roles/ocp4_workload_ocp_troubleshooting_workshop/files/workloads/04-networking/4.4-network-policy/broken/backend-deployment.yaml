@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-4-4-backend
+  labels:
+    app: lab-4-4-backend
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab-4-4-backend
+  template:
+    metadata:
+      labels:
+        app: lab-4-4-backend
+        role: backend
+        lab: "4-4"
+    spec:
+      containers:
+      - name: backend
+        image: registry.access.redhat.com/ubi9/nginx-124:latest
+        ports:
+        - containerPort: 8080
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          mkdir -p /usr/share/nginx/html
+          echo '{"message":"Hello from the backend!","status":"ok"}' > /usr/share/nginx/html/index.html
+          nginx -g "daemon off;"

@@ -1,16 +1,32 @@
 ---
+# remove_workload.yml — idempotent teardown of all workshop resources
+
 - name: Prepare variables
   ansible.builtin.include_tasks: prepare_variables.yml
 
-- name: Remove lab namespace for each user
+- name: Delete per-user module namespaces
   kubernetes.core.k8s:
     state: absent
-    definition:
-      apiVersion: v1
-      kind: Namespace
-      metadata:
-        name: "{{ item.key }}-lab"
-  loop: "{{ _workload_user_data.users | dict2items }}"
+    api_version: v1
+    kind: Namespace
+    name: "{{ item.0.key }}-{{ item.1.module }}"
+  loop: >-
+    {{ (_workload_user_data.users | dict2items)
+       | product(_ocp4_workload_ocp_troubleshooting_workshop_modules) | list }}
   loop_control:
-    label: "{{ item.key }}-lab"
+    label: "{{ item.0.key }}-{{ item.1.module }}"
   when: _workload_user_data.users is defined
+
+- name: Delete openshift-workshop-images namespace
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Namespace
+    name: openshift-workshop-images
+
+- name: Delete lab-5-3-quota-demo PriorityClass
+  kubernetes.core.k8s:
+    state: absent
+    api_version: scheduling.k8s.io/v1
+    kind: PriorityClass
+    name: lab-5-3-quota-demo

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-4-4-frontend
+  labels:
+    app: lab-4-4-frontend
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab-4-4-frontend
+  template:
+    metadata:
+      labels:
+        app: lab-4-4-frontend
+        role: frontend
+        lab: "4-4"
+    spec:
+      containers:
+      - name: frontend
+        image: registry.access.redhat.com/ubi9/nginx-124:latest
+        ports:
+        - containerPort: 8080
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          mkdir -p /usr/share/nginx/html
+          if curl -sf --max-time 3 http://lab-4-4-backend-svc:8080/ > /tmp/backend-response.json 2>/tmp/curl-err.log; then
+            BACKEND_MSG=$(cat /tmp/backend-response.json)
+            cat > /usr/share/nginx/html/index.html <<EOF
+          <!DOCTYPE html><html><body>
+          <h1>Frontend App</h1>
+          <h2>Backend Response:</h2>
+          <pre>${BACKEND_MSG}</pre>
+          </body></html>
+          EOF
+          else
+            cat > /usr/share/nginx/html/index.html <<EOF
+          <!DOCTYPE html><html><body>
+          <h1>Frontend App</h1>
+          <h2>Error: Cannot connect to backend service</h2>
+          <p>NetworkPolicy is blocking the connection.</p>
+          <pre>$(cat /tmp/curl-err.log 2>/dev/null)</pre>
+          </body></html>
+          EOF
+          fi
+          nginx -g "daemon off;"

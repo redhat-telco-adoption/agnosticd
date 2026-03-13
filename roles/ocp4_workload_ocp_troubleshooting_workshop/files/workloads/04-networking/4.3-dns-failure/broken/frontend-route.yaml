@@ -1,0 +1,16 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: lab-4-3-frontend-route
+  labels:
+    app: lab-4-3-frontend
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  to:
+    kind: Service
+    name: lab-4-3-frontend-svc
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

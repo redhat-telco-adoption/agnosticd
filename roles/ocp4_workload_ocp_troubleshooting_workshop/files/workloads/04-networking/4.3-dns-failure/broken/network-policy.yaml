@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lab-4-3-block-dns
+  labels:
+    app: lab-4-3-frontend
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  podSelector:
+    matchLabels:
+      app: lab-4-3-frontend
+  policyTypes:
+  - Egress
+  egress:
+  # Allow TCP to backend service
+  - to:
+    - podSelector:
+        matchLabels:
+          app: lab-4-3-backend
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Note: UDP port 53 (DNS) is intentionally NOT allowed here

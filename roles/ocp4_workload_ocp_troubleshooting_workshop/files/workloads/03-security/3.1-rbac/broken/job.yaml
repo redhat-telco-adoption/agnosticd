@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deploy-bot-job
+  labels:
+    app: lab-3-1-app
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+spec:
+  template:
+    metadata:
+      labels:
+        app: lab-3-1-app
+    spec:
+      serviceAccountName: deploy-bot
+      restartPolicy: Never
+      containers:
+      - name: deployer
+        image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -e
+          echo "Deploy Bot starting..."
+          echo "Attempting to create web application deployment..."
+          oc create deployment lab-3-1-webapp \
+            --image=registry.access.redhat.com/ubi9/nginx-124:latest \
+            --port=8080 \
+            -n $(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+          echo "Deployment created successfully!"
+  backoffLimit: 4

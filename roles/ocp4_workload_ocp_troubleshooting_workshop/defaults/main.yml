@@ -1,2 +1,7 @@
 ---
+# Required by AgnosticD framework
 ocp_username: "system:admin"
+
+# Identity provider name used in summary reporting
+ocp4_workload_ocp_troubleshooting_workshop_idp_name: >-
+  {{ ocp4_workload_authentication_htpasswd_idp_name | default('htpasswd') }}

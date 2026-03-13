@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ _username }}-{{ _module }}
+  labels:
+    workshop: openshift-troubleshooting
+    workshop-user: {{ _username }}
+    workshop-module: {{ _module }}
+    demo.redhat.com/name: ocp-troubleshooting-workshop
+    demo.redhat.com/created-by: openshift-demo-builder
