@@ -11,7 +11,9 @@
 - name: Set console URL fact
   ansible.builtin.set_fact:
     _ocp4_workload_ocp_troubleshooting_workshop_console_url: >-
-      {{ r_console.resources[0].status.consoleURL
+      {{ r_console.resources
+         | map(attribute='status.consoleURL')
+         | first
          | default('https://console-openshift-console.apps.' ~ openshift_cluster_ingress_domain) }}
 
 - name: Report per-user access information

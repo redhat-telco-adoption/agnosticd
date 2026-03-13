@@ -33,6 +33,7 @@
     file_type: directory
     recurse: true
   register: r_lab_dirs
+  delegate_to: localhost
 
 - name: Build labs list from discovered directories
   ansible.builtin.set_fact:

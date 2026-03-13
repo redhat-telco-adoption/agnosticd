@@ -1,6 +1,6 @@
 ---
 # provision_lab33_registry.yml
-# Called once before the per-user loop.
+# Called once after per-user namespaces are created.
 # Sets up an internal-registry image for lab 3.3 so students see
 # "unauthorized" (401) instead of "manifest unknown" (404).
 #
