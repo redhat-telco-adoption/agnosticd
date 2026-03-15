@@ -1,38 +1,79 @@
-Role Name
-=========
+# ocp4_workload_ocp_troubleshooting_workshop
 
-A brief description of the role goes here.
+Workload to deploy the OpenShift Troubleshooting Workshop onto OpenShift 4.
+Provisions per-attendee namespaces, HTPasswd identity provider, and 19 broken
+lab scenarios covering configuration, storage, security, networking, resources,
+and lifecycle failure modes.
 
-Requirements
-------------
+## Requirements
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+- OpenShift 4.x cluster accessible via kubeconfig
+- AgnosticD V2 framework installed and configured
+- Ansible collections: `kubernetes.core`, `agnosticd.core`
+- A default StorageClass must exist on the cluster
+- A `gold-storage` StorageClass must **not** exist (enforced by `pre_workload` validation)
 
-Role Variables
---------------
+## Role Variables
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+### Configurable Defaults (`defaults/main.yml`)
 
-Dependencies
-------------
+| Variable                                              | Default                                                                     | Description                                                   |
+|-------------------------------------------------------|-----------------------------------------------------------------------------|---------------------------------------------------------------|
+| `ocp_username`                                        | `system:admin`                                                              | OpenShift admin username, required by the AgnosticD framework |
+| `ocp4_workload_ocp_troubleshooting_workshop_idp_name` | `htpasswd` (inherits from `ocp4_workload_authentication_htpasswd_idp_name`) | HTPasswd identity provider name used in summary reporting     |
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+### Internal Variables (`vars/main.yml`)
 
-Example Playbook
-----------------
+These variables are set internally at runtime and are not intended for external configuration. They are prefixed with
+`_` per AgnosticD convention.
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+| Variable                                              | Description                                                                    |
+|-------------------------------------------------------|--------------------------------------------------------------------------------|
+| `_ocp4_workload_ocp_troubleshooting_workshop_modules` | List of workshop modules with their names and required namespace access levels |
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+## Workshop Modules
 
-License
--------
+| Module | Topic         | Labs                                                               |
+|--------|---------------|--------------------------------------------------------------------|
+| 01     | Configuration | Missing ConfigMap, Missing Secret, Invalid Env                     |
+| 02     | Storage       | Missing PVC, PVC Pending, Volume Permissions                       |
+| 03     | Security      | RBAC, SCC, Image Pull Secret                                       |
+| 04     | Networking    | Selector Mismatch, Route Misconfigured, DNS Failure, NetworkPolicy |
+| 05     | Resources     | Insufficient Resources, OOMKilled, Quota Exceeded                  |
+| 06     | Lifecycle     | CrashLoopBackOff, Probe Failure, Wrong Image Tag                   |
 
-BSD
+## Actions Supported
 
-Author Information
-------------------
+- `provision` — Creates the HTPasswd IDP, per-user namespaces (one per module), resource quotas, LimitRanges, and
+  deploys the 19 broken lab scenarios
+- `destroy` — Removes all provisioned resources
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+## Usage with AgnosticD V2
+
+Reference the workload in an AgnosticD V2 config vars file:
+
+```yaml
+workloads:
+  - redhat_telco_adoption.agnosticd.ocp4_workload_ocp_troubleshooting_workshop
+
+ocp_username: "system:admin"
+ocp4_workload_ocp_troubleshooting_workshop_idp_name: "htpasswd"
+```
+
+Then provision with:
+
+```bash
+agd provision
+```
+
+## Dependencies
+
+None
+
+## License
+
+Apache-2.0
+
+## Author Information
+
+Red Hat Demo Platform (demo-platform@redhat.com)

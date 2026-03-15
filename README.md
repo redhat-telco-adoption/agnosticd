@@ -28,53 +28,17 @@ AgnosticD framework.
 
 ## Available Workloads
 
-| Workload Role                                | Description                                                                                                            |
-|----------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
-| `ocp4_workload_ocp_troubleshooting_workshop` | Deploys the OpenShift Troubleshooting Workshop — per-attendee namespaces with 19 broken lab scenarios across 6 modules |
-
-## Workload Details
-
-### ocp4_workload_ocp_troubleshooting_workshop
-
-**Purpose:** Provisions per-attendee lab environments for an OpenShift troubleshooting workshop.
-
-**What it deploys:**
-
-- HTPasswd identity provider
-- Per-user namespaces (one per module): `{username}-{module}`
-- Resource quotas and LimitRanges per namespace
-- 19 intentionally broken application scenarios that participants must diagnose and fix
-
-**Workshop Modules:**
-
-| Module | Topic         | Labs                                                               |
-|--------|---------------|--------------------------------------------------------------------|
-| 01     | Configuration | Missing ConfigMap, Missing Secret, Invalid Env                     |
-| 02     | Storage       | Missing PVC, PVC Pending, Volume Permissions                       |
-| 03     | Security      | RBAC, SCC, Image Pull Secret                                       |
-| 04     | Networking    | Selector Mismatch, Route Misconfigured, DNS Failure, NetworkPolicy |
-| 05     | Resources     | Insufficient Resources, OOMKilled, Quota Exceeded                  |
-| 06     | Lifecycle     | CrashLoopBackOff, Probe Failure, Wrong Image Tag                   |
-
-**Key Variables:**
-
-| Variable                                              | Default        | Description              |
-|-------------------------------------------------------|----------------|--------------------------|
-| `ocp_username`                                        | `system:admin` | OpenShift admin username |
-| `ocp4_workload_ocp_troubleshooting_workshop_idp_name` | `htpasswd`     | HTPasswd IDP name        |
-
-**Actions supported:** `provision`, `destroy`
+| Workload Role                                                                                              | Description                                                                                                            |
+|------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| [`ocp4_workload_ocp_troubleshooting_workshop`](roles/ocp4_workload_ocp_troubleshooting_workshop/README.md) | Deploys the OpenShift Troubleshooting Workshop — per-attendee namespaces with 19 broken lab scenarios across 6 modules |
 
 ## Usage with AgnosticD V2
 
-Reference the workload in an AgnosticD V2 config vars file:
+Reference a workload in an AgnosticD V2 config vars file:
 
 ```yaml
 workloads:
-  - redhat_telco_adoption.agnosticd.ocp4_workload_ocp_troubleshooting_workshop
-
-ocp_username: "system:admin"
-ocp4_workload_ocp_troubleshooting_workshop_idp_name: "htpasswd"
+  - redhat_telco_adoption.agnosticd.<workload_name>
 ```
 
 Then provision with:
